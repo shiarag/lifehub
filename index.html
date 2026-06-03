@@ -230,6 +230,13 @@ label.lbl{font-size:12px;font-weight:600;color:var(--muted);display:block;margin
   .greet h1{font-size:25px}
   .grid[style*="1.3fr"],.grid[style*="1.4fr"],.grid[style*="1fr 1fr"]{grid-template-columns:1fr !important}
 }
+/* Make SVG icons inside clickable elements click-transparent — clicks fall through to the [data-act] parent */
+[data-act] svg,[data-act] path,[data-act] circle,[data-act] rect,[data-act] line,[data-act] polyline,
+[data-act] span,[data-act] b,[data-act] i,[data-act] small{pointer-events:none}
+/* Validation shake */
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.field.error{border-color:#ff6b6b !important;box-shadow:0 0 0 3px rgba(255,107,107,.2) !important;animation:shake .4s ease}
+
 .menu-btn{display:none;width:44px;height:44px;border-radius:13px;background:var(--panel);border:1px solid var(--line);place-items:center}
 .menu-btn svg{width:20px;height:20px;stroke:var(--text)}
 .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40}
@@ -300,6 +307,7 @@ const fmtDate = iso => { if(!iso) return ''; const d=new Date(iso+'T00:00'); ret
 const daysBetween = (a,b)=> Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/86400000);
 const addDays = (iso,n)=>{ const d=new Date(iso+'T00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
 const val = id => { const e=document.getElementById(id); return e?e.value:''; };
+function flash(id){const e=document.getElementById(id);if(!e)return;e.classList.remove('error');void e.offsetWidth;e.classList.add('error');e.focus();setTimeout(()=>e.classList.remove('error'),1200);}
 
 const ico = {
   check:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg>',
@@ -421,10 +429,10 @@ renderers.deen=function(){
   document.getElementById('qList').innerHTML=sorted.length?sorted.map(e=>`<div class="li"><div class="grow"><div class="t">${e.amount} ${e.unit}</div><div class="m">${fmtDate(e.date)}</div></div><button class="del" data-act="delQuran" data-id="${e.id}">×</button></div>`).join(''):emptyState('No sessions logged yet.');
   document.getElementById('inotes').innerHTML=notes.length?notes.map(n=>`<div class="note-card"><button class="del ndel" data-act="delINote" data-id="${n.id}">×</button><div class="t">${esc(n.title)||'Untitled'}</div><div class="b">${esc(n.body)}</div><div class="d">${fmtDate(n.date)}</div></div>`).join(''):emptyState('No notes yet.');
 };
-function addQuran(){const date=val('qDate'),amt=+val('qAmt'),unit=val('qUnit');if(!date||!amt||amt<=0)return;const q=DB.get('quran',{entries:[],goal:null});q.entries.push({id:uid(),date,amount:amt,unit});DB.set('quran',q);renderers.deen();}
+function addQuran(){const date=val('qDate'),amt=+val('qAmt'),unit=val('qUnit');if(!date){flash('qDate');return;}if(!amt||amt<=0){flash('qAmt');return;}const q=DB.get('quran',{entries:[],goal:null});q.entries.push({id:uid(),date,amount:amt,unit});DB.set('quran',q);renderers.deen();}
 function delQuran(id){const q=DB.get('quran',{entries:[],goal:null});q.entries=q.entries.filter(e=>e.id!==id);DB.set('quran',q);renderers.deen();}
 function saveGoal(){const amt=+val('qgAmt'),unit=val('qgUnit'),d=val('qgDate');const q=DB.get('quran',{entries:[],goal:null});q.goal=amt>0?{amount:amt,unit,deadline:d||null}:null;DB.set('quran',q);renderers.deen();}
-function addINote(){const t=val('inT').trim(),b=val('inB').trim();if(!t&&!b)return;const n=DB.get('inotes',[]);n.unshift({id:uid(),title:t,body:b,date:todayISO()});DB.set('inotes',n);renderers.deen();}
+function addINote(){const t=val('inT').trim(),b=val('inB').trim();if(!t&&!b){flash('inT');return;}const n=DB.get('inotes',[]);n.unshift({id:uid(),title:t,body:b,date:todayISO()});DB.set('inotes',n);renderers.deen();}
 function delINote(id){let n=DB.get('inotes',[]);n=n.filter(x=>x.id!==id);DB.set('inotes',n);renderers.deen();}
 
 /* ============ LEARNING ============ */
@@ -437,7 +445,7 @@ renderers.learning=function(){
     <div id="lList"></div>`;
   document.getElementById('lList').innerHTML=items.length?items.map(c=>`<div class="card" style="margin-bottom:12px;padding:20px 24px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:13px"><div class="grow"><div style="font-weight:700;font-size:15px">${esc(c.title)}</div><div style="font-size:12.5px;color:var(--dim);margin-top:2px">${esc(c.platform)||'—'}</div></div><span class="chip ${c.status==='done'?'done':c.status==='active'?'reading':'want'}">${c.status==='done'?'Completed':c.status==='active'?'In progress':'To start'}</span><button class="del" data-act="delLearning" data-id="${c.id}">×</button></div><div style="display:flex;align-items:center;gap:12px"><div class="bar" style="flex:1;margin:0"><i style="width:${c.progress||0}%"></i></div><span class="mono" style="font-size:12.5px;font-weight:700;color:var(--amber);width:42px;text-align:right">${c.progress||0}%</span></div></div>`).join(''):`<div class="card">${emptyState('No courses yet. Add one above.')}</div>`;
 };
-function addLearning(){const title=val('lT').trim();if(!title)return;const platform=val('lP').trim();const progress=Math.max(0,Math.min(100,+val('lProg')||0));const status=val('lStat');const items=DB.get('learning',[]);items.unshift({id:uid(),title,platform,progress,status});DB.set('learning',items);renderers.learning();}
+function addLearning(){const title=val('lT').trim();if(!title){flash('lT');return;}const platform=val('lP').trim();const progress=Math.max(0,Math.min(100,+val('lProg')||0));const status=val('lStat');const items=DB.get('learning',[]);items.unshift({id:uid(),title,platform,progress,status});DB.set('learning',items);renderers.learning();}
 function delLearning(id){let i=DB.get('learning',[]);i=i.filter(x=>x.id!==id);DB.set('learning',i);renderers.learning();}
 
 /* ============ YOUTUBE ============ */
@@ -457,7 +465,7 @@ renderers.youtube=function(){
       return `<div class="yt"><a href="${esc(v.url)}" target="_blank" rel="noopener">${thumb}<div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></a><button class="ytdel" data-act="delYT" data-id="${v.id}">×</button><div class="body"><div class="t">${esc(v.title)||(id?'YouTube video':esc(v.url))}</div>${v.playlist?`<div class="pl">${esc(v.playlist)}</div>`:''}</div></div>`;}).join('')}</div>`;
   }).join('');
 };
-function addYT(){const url=val('yUrl').trim();if(!url)return;const playlist=val('yPl').trim()||'Unsorted';const title=val('yTitle').trim();const items=DB.get('youtube',[]);items.unshift({id:uid(),url,playlist,title});DB.set('youtube',items);renderers.youtube();}
+function addYT(){const url=val('yUrl').trim();if(!url){flash('yUrl');return;}const playlist=val('yPl').trim()||'Unsorted';const title=val('yTitle').trim();const items=DB.get('youtube',[]);items.unshift({id:uid(),url,playlist,title});DB.set('youtube',items);renderers.youtube();}
 function delYT(id){let i=DB.get('youtube',[]);i=i.filter(x=>x.id!==id);DB.set('youtube',i);renderers.youtube();}
 
 /* ============ BOOKS ============ */
@@ -473,7 +481,7 @@ renderers.books=function(){
   document.getElementById('bList').innerHTML=shown.length?shown.map(b=>`<div class="li"><div class="grow"><div class="t">${esc(b.title)}</div><div class="m">${esc(b.author)||'Unknown author'}</div></div><select class="field" style="width:auto;padding:8px 10px;font-size:12.5px" data-change="setBookStatus" data-id="${b.id}"><option value="want" ${b.status==='want'?'selected':''}>Want to read</option><option value="reading" ${b.status==='reading'?'selected':''}>Reading</option><option value="done" ${b.status==='done'?'selected':''}>Read</option></select><button class="del" data-act="delBook" data-id="${b.id}">×</button></div>`).join(''):emptyState('Nothing here yet.');
 };
 function setBookFilter(f){bookFilter=f;renderers.books();}
-function addBook(){const title=val('bT').trim();if(!title)return;const author=val('bA').trim(),status=val('bS');const b=DB.get('books',[]);b.unshift({id:uid(),title,author,status});DB.set('books',b);renderers.books();}
+function addBook(){const title=val('bT').trim();if(!title){flash('bT');return;}const author=val('bA').trim(),status=val('bS');const b=DB.get('books',[]);b.unshift({id:uid(),title,author,status});DB.set('books',b);renderers.books();}
 function setBookStatus(id,s){const b=DB.get('books',[]);const x=b.find(z=>z.id===id);if(x){x.status=s;DB.set('books',b);renderers.books();}}
 function delBook(id){let b=DB.get('books',[]);b=b.filter(x=>x.id!==id);DB.set('books',b);renderers.books();}
 
@@ -491,7 +499,7 @@ renderers.tasks=function(){
   document.getElementById('tList').innerHTML=(open.length||done.length)?(open.map(taskLi).join('')+(done.length?`<div class="sub" style="margin:18px 0 10px;font-weight:700">Done</div>`+done.map(taskLi).join(''):'')):emptyState('No tasks here. Add one above.');
 };
 function setTaskFilter(f){taskFilter=f;renderers.tasks();}
-function addTask(){const text=val('tT').trim();if(!text)return;const cat=val('tC');const t=DB.get('tasks',[]);t.unshift({id:uid(),text,cat,done:false});DB.set('tasks',t);const f=document.getElementById('tT');if(f)f.value='';renderers.tasks();}
+function addTask(){const text=val('tT').trim();if(!text){flash('tT');return;}const cat=val('tC');const t=DB.get('tasks',[]);t.unshift({id:uid(),text,cat,done:false});DB.set('tasks',t);const f=document.getElementById('tT');if(f)f.value='';renderers.tasks();}
 function toggleTask(id){const t=DB.get('tasks',[]);const x=t.find(z=>z.id===id);if(x){x.done=!x.done;DB.set('tasks',t);rerender();}}
 
 /* ============ HABITS ============ */
@@ -505,7 +513,7 @@ renderers.habits=function(){
   document.getElementById('hList').innerHTML=habits.length?habits.map(h=>{const set=new Set(h.dates||[]);
     return `<div class="card" style="margin-bottom:12px;padding:20px 24px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:15px"><div class="grow"><div style="font-weight:700;font-size:15px">${esc(h.name)}</div></div><span class="chip">🔥 ${streakFromDates(h.dates||[])} day streak</span><button class="del" data-act="delHabit" data-id="${h.id}">×</button></div><div class="hweek">${days.map(d=>`<div class="hday ${set.has(d)?'on':''}" data-act="toggleHabit" data-id="${h.id}" data-date="${d}" title="${fmtDate(d)}">${dow[new Date(d+'T00:00').getDay()]}</div>`).join('')}</div></div>`;}).join(''):`<div class="card">${emptyState('No habits yet. Add one above.')}</div>`;
 };
-function addHabit(){const name=val('hN').trim();if(!name)return;const h=DB.get('habits',[]);h.push({id:uid(),name,dates:[]});DB.set('habits',h);const f=document.getElementById('hN');if(f)f.value='';renderers.habits();}
+function addHabit(){const name=val('hN').trim();if(!name){flash('hN');return;}const h=DB.get('habits',[]);h.push({id:uid(),name,dates:[]});DB.set('habits',h);const f=document.getElementById('hN');if(f)f.value='';renderers.habits();}
 function toggleHabit(id,date){const h=DB.get('habits',[]);const x=h.find(z=>z.id===id);if(!x)return;x.dates=x.dates||[];const i=x.dates.indexOf(date);if(i>=0)x.dates.splice(i,1);else x.dates.push(date);DB.set('habits',h);rerender();}
 function delHabit(id){let h=DB.get('habits',[]);h=h.filter(x=>x.id!==id);DB.set('habits',h);renderers.habits();}
 
@@ -518,7 +526,7 @@ renderers.journal=function(){
     <div id="jList"></div>`;
   document.getElementById('jList').innerHTML=entries.length?entries.map(e=>`<div class="card" style="margin-bottom:12px;position:relative"><button class="del" style="position:absolute;top:18px;right:18px" data-act="delJournal" data-id="${e.id}">×</button><div class="mono" style="font-size:11px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${fmtDate(e.date)}</div><div style="font-weight:700;font-size:16px;margin:7px 0 9px;padding-right:24px">${esc(e.title)||'Untitled'}</div><div style="color:var(--muted);font-size:13.5px;white-space:pre-wrap;line-height:1.65">${esc(e.body)}</div></div>`).join(''):`<div class="card">${emptyState('No entries yet.')}</div>`;
 };
-function addJournal(){const title=val('jT').trim(),body=val('jB').trim();if(!title&&!body)return;const j=DB.get('journal',[]);j.unshift({id:uid(),title,body,date:todayISO()});DB.set('journal',j);renderers.journal();}
+function addJournal(){const title=val('jT').trim(),body=val('jB').trim();if(!title&&!body){flash('jB');return;}const j=DB.get('journal',[]);j.unshift({id:uid(),title,body,date:todayISO()});DB.set('journal',j);renderers.journal();}
 function delJournal(id){let j=DB.get('journal',[]);j=j.filter(x=>x.id!==id);DB.set('journal',j);renderers.journal();}
 
 /* ============ CYCLE ============ */
@@ -541,7 +549,7 @@ renderers.cycle=function(){
     </div>`;
   document.getElementById('cList').innerHTML=sorted.length?sorted.map(d=>{const pos=full.indexOf(d);const gap=pos>0?daysBetween(full[pos-1],d):null;return `<div class="li"><div class="grow"><div class="t">${fmtDate(d)}</div><div class="m">${gap!=null?gap+' days after previous':'first logged'}</div></div><button class="del" data-act="delCycle" data-id="${d}">×</button></div>`;}).join(''):emptyState('No dates logged yet.');
 };
-function addCycle(){const d=val('cDate');if(!d)return;const cyc=DB.get('cycle',{starts:[]});if(!cyc.starts.includes(d))cyc.starts.push(d);DB.set('cycle',cyc);renderers.cycle();}
+function addCycle(){const d=val('cDate');if(!d){flash('cDate');return;}const cyc=DB.get('cycle',{starts:[]});if(!cyc.starts.includes(d))cyc.starts.push(d);DB.set('cycle',cyc);renderers.cycle();}
 function delCycle(d){const cyc=DB.get('cycle',{starts:[]});cyc.starts=cyc.starts.filter(x=>x!==d);DB.set('cycle',cyc);renderers.cycle();}
 
 /* ============ INIT ============ */
