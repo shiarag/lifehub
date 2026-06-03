@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LifeHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#100C08; --bg:#15100B; --bg-2:#1c130d;
+  --panel:rgba(38,26,18,.72); --panel-edge:rgba(255,148,8,.10);
+  --line:rgba(219,224,225,.09); --line-2:rgba(219,224,225,.18);
+  --amber:#FF9408; --burnt:#CA3F16; --maroon:#95122C; --crimson:#b3173a;
+  --text:#F3F4F5; --muted:#c8b8a8; --dim:#8a7765; --stone:#6f6258;
+  --radius:20px; --radius-sm:13px;
+  --glow:0 18px 50px -12px rgba(0,0,0,.7);
+  --grad:linear-gradient(135deg,var(--amber),var(--burnt));
+  --grad-hot:linear-gradient(135deg,#FFB454,var(--amber) 40%,var(--burnt) 80%,var(--maroon));
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text);
+  -webkit-font-smoothing:antialiased;line-height:1.45;position:relative;
+  background:
+    radial-gradient(1100px 560px at 88% -8%, rgba(255,148,8,.16), transparent 58%),
+    radial-gradient(820px 520px at 6% 8%, rgba(202,63,22,.12), transparent 55%),
+    radial-gradient(900px 700px at 50% 118%, rgba(149,18,44,.18), transparent 60%),
+    var(--ink);
+}
+/* grain */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.app,.scrim{position:relative;z-index:2}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,148,8,.22);border-radius:20px}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;color:var(--text)}
+a{color:inherit;text-decoration:none}
+.mono{font-family:'JetBrains Mono',monospace}
+
+.app{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  background:linear-gradient(185deg,rgba(28,19,13,.9),rgba(16,12,8,.96));
+  border-right:1px solid var(--line);backdrop-filter:blur(12px);
+  padding:26px 18px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:2px 8px 24px}
+.brand .logo{
+  width:42px;height:42px;border-radius:13px;flex:0 0 auto;background:var(--grad-hot);
+  display:grid;place-items:center;color:var(--ink);font-weight:800;font-size:20px;
+  box-shadow:0 8px 22px -4px rgba(255,148,8,.5);position:relative;overflow:hidden;
+}
+.brand .logo::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.35),transparent 50%)}
+.brand b{font-size:20px;font-weight:800;letter-spacing:-.5px;font-family:'Clash Display',system-ui,sans-serif}
+.brand span{display:block;font-size:10.5px;color:var(--dim);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--stone);padding:16px 12px 8px;font-weight:700}
+.nav-item{
+  display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:13px;
+  color:var(--muted);font-weight:600;font-size:14px;width:100%;text-align:left;
+  transition:.2s cubic-bezier(.4,0,.2,1);position:relative;
+}
+.nav-item svg{width:19px;height:19px;flex:0 0 auto;stroke-width:2;transition:.2s}
+.nav-item:hover{background:rgba(255,148,8,.07);color:var(--text)}
+.nav-item:hover svg{stroke:var(--amber)}
+.nav-item.active{background:var(--grad);color:var(--ink);box-shadow:0 8px 20px -6px rgba(255,148,8,.55)}
+.nav-item.active svg{stroke:var(--ink)}
+.sidebar-foot{margin-top:auto;padding-top:18px}
+.tip{
+  background:linear-gradient(155deg,rgba(149,18,44,.22),rgba(38,26,18,.5));
+  border:1px solid var(--panel-edge);border-radius:16px;padding:15px 16px;
+}
+.tip b{font-size:13px;display:block;color:var(--amber)}
+.tip p{font-size:11.5px;color:var(--muted);margin:5px 0 0;line-height:1.55}
+
+/* ---------- Main ---------- */
+.main{padding:28px 36px 64px;overflow-x:hidden}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:28px;flex-wrap:wrap}
+.greet h1{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1.1;font-family:'Clash Display',system-ui,sans-serif}
+.greet h1 .accent{background:var(--grad-hot);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.greet p{color:var(--dim);font-size:14px;margin-top:5px;font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.date-pill{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 16px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap;backdrop-filter:blur(8px)}
+.avatar{width:44px;height:44px;border-radius:13px;background:var(--grad-hot);display:grid;place-items:center;color:var(--ink);font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 8px 20px -6px rgba(255,148,8,.5);transition:.2s}
+.avatar:hover{transform:translateY(-2px)}
+
+.view{display:none;animation:fade .4s cubic-bezier(.2,.7,.3,1)}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.view > *{animation:fade .5s backwards}
+.view > *:nth-child(2){animation-delay:.05s}
+.view > *:nth-child(3){animation-delay:.1s}
+.view > *:nth-child(4){animation-delay:.15s}
+
+/* cards */
+.grid{display:grid;gap:18px}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;
+  backdrop-filter:blur(14px);box-shadow:var(--glow);position:relative;overflow:hidden;
+}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,148,8,.4),transparent)}
+.card h3{font-size:16.5px;font-weight:700;letter-spacing:-.3px;margin-bottom:2px;font-family:'Clash Display',system-ui,sans-serif}
+.card .sub{color:var(--dim);font-size:12.5px;font-weight:500}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:18px}
+.stat{
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;backdrop-filter:blur(12px);transition:.25s;box-shadow:var(--glow);
+}
+.stat:hover{transform:translateY(-3px);border-color:var(--line-2)}
+.stat::after{content:"";position:absolute;right:-30px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(255,148,8,.14),transparent 70%)}
+.stat .label{font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.stat .num{font-size:34px;font-weight:700;letter-spacing:-1.5px;margin-top:10px;font-family:'JetBrains Mono',monospace}
+.stat .num small{font-size:14px;color:var(--dim);font-weight:500}
+.stat .ic{position:absolute;right:18px;top:18px;width:36px;height:36px;border-radius:11px;background:rgba(255,148,8,.13);display:grid;place-items:center;z-index:1}
+.stat .ic svg{width:18px;height:18px;stroke:var(--amber)}
+
+/* ring */
+.ring-wrap{display:flex;align-items:center;gap:22px}
+.ring{position:relative;width:116px;height:116px;flex:0 0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .val b{font-size:25px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;display:block}
+.ring .val span{font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+
+/* buttons + inputs */
+.btn{background:var(--grad);color:var(--ink);font-weight:700;font-size:13.5px;padding:11px 18px;border-radius:12px;transition:.2s;display:inline-flex;align-items:center;gap:7px;box-shadow:0 8px 18px -8px rgba(255,148,8,.6)}
+.btn:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 12px 24px -8px rgba(255,148,8,.7)}
+.btn:active{transform:translateY(0)}
+.btn svg{width:16px;height:16px;stroke:var(--ink);stroke-width:2.6}
+.btn-ghost{background:rgba(255,148,8,.1);color:var(--amber);border:1px solid var(--panel-edge);box-shadow:none}
+.btn-ghost:hover{filter:none;background:rgba(255,148,8,.16);transform:translateY(-1px);box-shadow:none}
+.btn-sm{padding:8px 14px;font-size:12.5px;border-radius:10px}
+
+.field{width:100%;background:rgba(16,12,8,.6);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;transition:.18s}
+.field:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,148,8,.14);background:rgba(16,12,8,.85)}
+.field::placeholder{color:var(--stone)}
+textarea.field{resize:vertical;min-height:84px;line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > .field{flex:1;min-width:120px}
+label.lbl{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+
+/* list items */
+.li{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:rgba(16,12,8,.45);border:1px solid var(--line);transition:.18s}
+.li:hover{border-color:var(--line-2);background:rgba(16,12,8,.6)}
+.li + .li{margin-top:10px}
+.li .grow{flex:1;min-width:0}
+.li .t{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis}
+.li .m{font-size:12px;color:var(--dim);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.del{color:var(--stone);font-size:19px;line-height:1;padding:4px 9px;border-radius:9px;transition:.15s}
+.del:hover{color:#ff7a7a;background:rgba(255,122,122,.12)}
+
+.chip{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;background:rgba(255,148,8,.15);color:var(--amber)}
+.chip.work{background:rgba(255,148,8,.15);color:var(--amber)}
+.chip.personal{background:rgba(202,63,22,.2);color:#ff7a45}
+.chip.deen{background:rgba(255,180,84,.16);color:#FFB454}
+.chip.health{background:rgba(149,18,44,.24);color:#ff5e80}
+.chip.other{background:rgba(219,224,225,.12);color:var(--muted)}
+.chip.want{background:rgba(219,224,225,.12);color:var(--muted)}
+.chip.reading{background:rgba(202,63,22,.2);color:#ff7a45}
+.chip.done{background:rgba(255,148,8,.15);color:var(--amber)}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:8px 15px;border-radius:11px;font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--line);transition:.18s;backdrop-filter:blur(8px)}
+.tab:hover{color:var(--text);border-color:var(--line-2)}
+.tab.active{background:var(--grad);color:var(--ink);border-color:transparent;box-shadow:0 6px 16px -8px rgba(255,148,8,.6)}
+
+/* checkbox */
+.cbx{width:23px;height:23px;border-radius:8px;border:2px solid var(--line-2);flex:0 0 auto;display:grid;place-items:center;transition:.18s;cursor:pointer}
+.cbx.on{background:var(--grad);border-color:transparent}
+.cbx svg{width:13px;height:13px;stroke:var(--ink);stroke-width:3.2;opacity:0;transition:.15s}
+.cbx.on svg{opacity:1}
+.li.done-li .t{text-decoration:line-through;color:var(--stone)}
+
+.empty{text-align:center;padding:36px 20px;color:var(--stone);font-size:13.5px}
+.empty svg{width:36px;height:36px;stroke:var(--stone);margin-bottom:12px;opacity:.55}
+
+.bar{height:9px;border-radius:20px;background:rgba(16,12,8,.7);overflow:hidden;margin-top:10px}
+.bar > i{display:block;height:100%;border-radius:20px;background:var(--grad-hot);transition:width .5s cubic-bezier(.2,.7,.3,1)}
+
+.hweek{display:flex;gap:7px}
+.hday{width:38px;height:38px;border-radius:11px;background:rgba(16,12,8,.55);border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--stone);cursor:pointer;transition:.18s}
+.hday.on{background:var(--grad);color:var(--ink);border-color:transparent;box-shadow:0 6px 14px -6px rgba(255,148,8,.6)}
+.hday:hover{border-color:var(--line-2);transform:translateY(-2px)}
+
+.yt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.yt{background:rgba(16,12,8,.5);border:1px solid var(--line);border-radius:15px;overflow:hidden;transition:.22s;position:relative}
+.yt:hover{border-color:var(--line-2);transform:translateY(-4px);box-shadow:var(--glow)}
+.yt .thumb{aspect-ratio:16/9;width:100%;object-fit:cover;background:var(--ink);display:block}
+.yt .thumb-fallback{aspect-ratio:16/9;display:grid;place-items:center;background:rgba(149,18,44,.15);color:var(--stone);font-size:12px}
+.yt .body{padding:13px 15px}
+.yt .body .t{font-weight:600;font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.yt .body .pl{font-size:10.5px;color:var(--amber);font-weight:700;margin-top:7px;text-transform:uppercase;letter-spacing:.4px}
+.yt .play{position:absolute;top:9px;left:9px;width:32px;height:32px;border-radius:9px;background:rgba(16,12,8,.75);display:grid;place-items:center;opacity:0;transition:.18s;backdrop-filter:blur(4px)}
+.yt:hover .play{opacity:1}
+.yt .play svg{width:15px;height:15px;fill:var(--amber)}
+.yt .ytdel{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:9px;background:rgba(16,12,8,.78);display:grid;place-items:center;opacity:0;transition:.18s;font-size:17px;color:#ff8b8b;backdrop-filter:blur(4px)}
+.yt:hover .ytdel{opacity:1}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.note-card{background:rgba(16,12,8,.5);border:1px solid var(--line);border-radius:15px;padding:17px 19px;position:relative;transition:.18s}
+.note-card:hover{border-color:var(--line-2)}
+.note-card .t{font-weight:700;font-size:14.5px;padding-right:24px}
+.note-card .b{font-size:13px;color:var(--muted);margin-top:8px;white-space:pre-wrap;line-height:1.6}
+.note-card .d{font-size:10.5px;color:var(--stone);margin-top:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.note-card .ndel{position:absolute;top:13px;right:13px}
+
+.section-title{font-size:15px;font-weight:700;margin:26px 0 15px;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;font-family:'Clash Display',system-ui,sans-serif}
+.section-title svg{width:18px;height:18px;stroke:var(--amber)}
+.section-title .ct{color:var(--stone);font-weight:600;font-size:12px;font-family:'JetBrains Mono',monospace}
+
+/* welcome */
+.welcome{background:linear-gradient(150deg,rgba(255,148,8,.14),rgba(149,18,44,.18));border:1px solid var(--panel-edge);border-radius:var(--radius);padding:26px;margin-bottom:18px;box-shadow:var(--glow)}
+.welcome h2{font-size:22px;font-weight:800;letter-spacing:-.6px;font-family:'Clash Display',system-ui,sans-serif}
+.welcome p{color:var(--muted);font-size:13.5px;margin:6px 0 16px}
+
+@media(max-width:920px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;width:256px;z-index:50;transform:translateX(-100%);transition:.28s}
+  .sidebar.open{transform:none}
+  .main{padding:20px 18px 60px}
+  .menu-btn{display:grid !important}
+  .two-col{grid-template-columns:1fr}
+  .greet h1{font-size:25px}
+  .grid[style*="1.3fr"],.grid[style*="1.4fr"],.grid[style*="1fr 1fr"]{grid-template-columns:1fr !important}
+  .juz-surahs{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .sq-modal{padding:20px 18px}
+  .sq-log-row{flex-direction:column}
+  .quran-overview{grid-template-columns:repeat(2,1fr)}
+}
+/* Make SVG icons inside clickable elements click-transparent — clicks fall through to the [data-act] parent */
+[data-act] svg,[data-act] path,[data-act] circle,[data-act] rect,[data-act] line,[data-act] polyline,
+[data-act] span,[data-act] b,[data-act] i,[data-act] small{pointer-events:none}
+/* Validation shake */
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.field.error{border-color:#ff6b6b !important;box-shadow:0 0 0 3px rgba(255,107,107,.2) !important;animation:shake .4s ease}
+
+.menu-btn{display:none;width:44px;height:44px;border-radius:13px;background:var(--panel);border:1px solid var(--line);place-items:center}
+.menu-btn svg{width:20px;height:20px;stroke:var(--text)}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40}
+.scrim.show{display:block}
+
+/* ---- Surah Grid ---- */
+.juz-block{margin-bottom:14px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(12px)}
+.juz-header{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;transition:.18s}
+.juz-header:hover{background:rgba(255,148,8,.06)}
+.juz-num{width:36px;height:36px;border-radius:10px;background:var(--grad);display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--ink);flex:0 0 auto;box-shadow:0 6px 14px -6px rgba(255,148,8,.5)}
+.juz-title{flex:1}
+.juz-title b{font-size:14px;font-weight:700;letter-spacing:-.2px;font-family:'Clash Display',system-ui,sans-serif}
+.juz-title span{display:block;font-size:11px;color:var(--dim);margin-top:1px;font-weight:600}
+.juz-bar-wrap{width:80px;flex:0 0 auto}
+.juz-bar-pct{font-size:11px;font-weight:700;color:var(--amber);font-family:'JetBrains Mono',monospace;text-align:right;margin-bottom:4px}
+.juz-chevron{width:18px;height:18px;stroke:var(--stone);transition:.25s;flex:0 0 auto}
+.juz-block.open .juz-chevron{transform:rotate(180deg)}
+.juz-surahs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:0 14px 14px;display:none}
+.juz-block.open .juz-surahs{display:grid}
+.surah-tile{border-radius:13px;padding:12px 13px;cursor:pointer;transition:.22s;position:relative;overflow:hidden;border:1px solid var(--line);background:rgba(16,12,8,.55)}
+.surah-tile:hover{transform:translateY(-2px);border-color:rgba(255,148,8,.3)}
+.surah-tile.complete{border-color:rgba(255,148,8,.5);background:rgba(255,148,8,.1);box-shadow:0 0 18px -4px rgba(255,148,8,.35),inset 0 0 20px -10px rgba(255,148,8,.2)}
+.surah-tile.partial{border-color:rgba(255,148,8,.22);background:rgba(255,148,8,.06)}
+.surah-tile .s-num{font-size:10px;font-weight:700;color:var(--stone);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.surah-tile .s-name{font-size:13px;font-weight:700;line-height:1.25;letter-spacing:-.2px}
+.surah-tile .s-arabic{font-size:14px;color:var(--amber);margin-top:3px;text-align:right;font-weight:500;direction:rtl}
+.surah-tile .s-pct{font-size:10.5px;font-weight:700;color:var(--dim);margin-top:6px;font-family:'JetBrains Mono',monospace}
+.surah-tile.complete .s-pct{color:var(--amber)}
+.surah-tile .s-fill{position:absolute;bottom:0;left:0;height:3px;background:var(--grad-hot);border-radius:0 2px 0 0;transition:width .4s cubic-bezier(.2,.7,.3,1)}
+.tile-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 0%,rgba(255,148,8,.18),transparent 70%);opacity:0;transition:.3s}
+.surah-tile.complete .tile-glow{opacity:1}
+
+/* ---- Surah Modal ---- */
+.sq-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);animation:fade .2s ease}
+.sq-modal{background:linear-gradient(145deg,#1e1510,#130e0a);border:1px solid rgba(255,148,8,.22);border-radius:22px;padding:28px;width:100%;max-width:460px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 40px -10px rgba(255,148,8,.15);position:relative}
+.sq-modal h3{font-size:19px;font-weight:800;letter-spacing:-.5px;font-family:'Clash Display',system-ui,sans-serif}
+.sq-modal .sq-arabic{font-size:22px;color:var(--amber);direction:rtl;margin-top:2px;font-weight:500}
+.sq-modal .sq-meta{font-size:12px;color:var(--dim);margin-top:8px;margin-bottom:20px;font-weight:600}
+.sq-close{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:10px;background:rgba(255,148,8,.1);display:grid;place-items:center;color:var(--amber);font-size:20px;line-height:1;transition:.15s}
+.sq-close:hover{background:rgba(255,148,8,.2)}
+.sq-pct-display{text-align:center;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;letter-spacing:-2px;background:var(--grad-hot);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sq-slider{width:100%;-webkit-appearance:none;height:8px;border-radius:20px;background:rgba(219,224,225,.1);outline:none;margin-bottom:8px;cursor:pointer}
+.sq-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--amber);cursor:pointer;box-shadow:0 4px 12px -4px rgba(255,148,8,.7)}
+.sq-slider-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--stone);font-weight:600;margin-bottom:18px}
+.sq-log-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.sq-log-row .field{flex:1;min-width:100px}
+.sq-sessions{max-height:160px;overflow-y:auto;margin-top:14px}
+.sq-sessions .li{padding:10px 13px}
+
+/* Quran overview stats */
+.quran-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px}
+.q-stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;text-align:center;backdrop-filter:blur(8px)}
+.q-stat .q-val{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;background:var(--grad-hot);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.q-stat .q-lbl{font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="logo">L</div><div><b>LifeHub</b><span>personal system</span></div></div>
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" data-act="nav" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+    <div class="nav-label">Spaces</div>
+    <button class="nav-item" data-act="nav" data-view="deen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/><path d="M17 5l.6 1.6L19 7l-1.4.5L17 9l-.6-1.5L15 7l1.4-.4z"/></svg>Islam / Deen</button>
+    <button class="nav-item" data-act="nav" data-view="learning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Learning</button>
+    <button class="nav-item" data-act="nav" data-view="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none"/></svg>Watchlist</button>
+    <button class="nav-item" data-act="nav" data-view="books"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M4 4v14"/></svg>Books</button>
+    <button class="nav-item" data-act="nav" data-view="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Tasks</button>
+    <button class="nav-item" data-act="nav" data-view="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>Habits</button>
+    <button class="nav-item" data-act="nav" data-view="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Journal</button>
+    <button class="nav-item" data-act="nav" data-view="cycle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Cycle Tracker</button>
+    <div class="sidebar-foot"><div class="tip"><b>Saved on this device</b><p>Everything you log stays in this browser. No accounts, nothing leaves your device.</p></div></div>
+  </aside>
+  <div class="scrim" id="scrim" data-act="menuClose"></div>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <button class="menu-btn" data-act="menuOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+        <div class="greet"><h1 id="greetTitle">Hello</h1><p id="greetSub">Here's your day at a glance.</p></div>
+      </div>
+      <div class="topbar-right">
+        <div class="date-pill mono" id="datePill"></div>
+        <div class="avatar" id="avatarInit" title="Click to set your name" data-act="promptName">Y</div>
+      </div>
+    </div>
+    <section class="view active" id="view-dashboard"></section>
+    <section class="view" id="view-deen"></section>
+    <section class="view" id="view-learning"></section>
+    <section class="view" id="view-youtube"></section>
+    <section class="view" id="view-books"></section>
+    <section class="view" id="view-tasks"></section>
+    <section class="view" id="view-habits"></section>
+    <section class="view" id="view-journal"></section>
+    <section class="view" id="view-cycle"></section>
+  </main>
+</div>
+
+<script>
+/* ============ RESILIENT STORAGE (memory-first, localStorage best-effort) ============ */
+const mem = {};
+const DB = {
+  get(k, def){
+    if(k in mem) return mem[k];
+    try{ const v=localStorage.getItem('lifehub_'+k); mem[k] = v!==null?JSON.parse(v):def; }
+    catch(e){ mem[k]=def; }
+    return mem[k];
+  },
+  set(k, v){
+    mem[k]=v;
+    try{ localStorage.setItem('lifehub_'+k, JSON.stringify(v)); }catch(e){/* storage blocked — memory still holds it */}
+  }
+};
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+const esc = s => (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = iso => { if(!iso) return ''; const d=new Date(iso+'T00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+const daysBetween = (a,b)=> Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/86400000);
+const addDays = (iso,n)=>{ const d=new Date(iso+'T00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+const val = id => { const e=document.getElementById(id); return e?e.value:''; };
+function flash(id){const e=document.getElementById(id);if(!e)return;e.classList.remove('error');void e.offsetWidth;e.classList.add('error');e.focus();setTimeout(()=>e.classList.remove('error'),1200);}
+
+const ico = {
+  check:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14"/></svg>',
+  empty:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 7l2-3h14l2 3"/></svg>'
+};
+function ring(pct,label,sub){
+  pct=Math.max(0,Math.min(100,Math.round(pct)));
+  const r=49,c=2*Math.PI*r,off=c-(pct/100)*c;
+  return `<div class="ring"><svg width="116" height="116" viewBox="0 0 116 116">
+    <circle cx="58" cy="58" r="${r}" stroke="rgba(219,224,225,.08)" stroke-width="10" fill="none"/>
+    <circle cx="58" cy="58" r="${r}" stroke="url(#g)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/>
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB454"/><stop offset=".5" stop-color="#FF9408"/><stop offset="1" stop-color="#CA3F16"/></linearGradient></defs>
+  </svg><div class="val"><div><b>${label}</b><span>${sub||''}</span></div></div></div>`;
+}
+const emptyState = txt => `<div class="empty">${ico.empty}<div>${txt}</div></div>`;
+
+/* ============ NAV ============ */
+const views=['dashboard','deen','learning','youtube','books','tasks','habits','journal','cycle'];
+const renderers={};
+function currentView(){ return views.find(v=>document.getElementById('view-'+v).classList.contains('active')); }
+function rerender(){ const c=currentView(); if(renderers[c]) renderers[c](); }
+function switchView(v){
+  views.forEach(x=>document.getElementById('view-'+x).classList.toggle('active',x===v));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  if(renderers[v]) renderers[v]();
+  toggleNav(false); window.scrollTo(0,0);
+}
+
+function toggleNav(open){ document.getElementById('sidebar').classList.toggle('open',open); document.getElementById('scrim').classList.toggle('show',open); }
+
+/* ============ HEADER / NAME ============ */
+function setHeader(){
+  const name=DB.get('name','');
+  const h=new Date().getHours();
+  const part=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  document.getElementById('greetTitle').innerHTML = name? `${part}, <span class="accent">${esc(name)}</span>` : part;
+  document.getElementById('datePill').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
+  document.getElementById('avatarInit').textContent=(name?name.trim()[0].toUpperCase():'?');
+}
+function saveName(){
+  const n=val('nameInput').trim();
+  if(n){ DB.set('name',n); }
+  setHeader(); renderers.dashboard();
+}
+function promptName(){ switchView('dashboard'); const f=document.getElementById('nameInput'); if(f){f.focus();} }
+
+
+/* ============ QURAN DAILY QUOTE ============ */
+const QURAN_QUOTES=[
+  {text:"Verily, with hardship comes ease.",ref:"94:6"},
+  {text:"And He found you lost and guided you.",ref:"93:7"},
+  {text:"So remember Me; I will remember you.",ref:"2:152"},
+  {text:"And whoever puts their trust in Allah, He will be enough for them.",ref:"65:3"},
+  {text:"My mercy encompasses all things.",ref:"7:156"},
+  {text:"Allah does not burden a soul beyond that it can bear.",ref:"2:286"},
+  {text:"And say: My Lord, increase me in knowledge.",ref:"20:114"},
+  {text:"Indeed, Allah is with the patient.",ref:"2:153"},
+  {text:"And whoever fears Allah, He will make for him a way out.",ref:"65:2"},
+  {text:"He knows what is in every heart.",ref:"67:13"},
+  {text:"And We have certainly made the Quran easy for remembrance.",ref:"54:17"},
+  {text:"Do not lose hope in the mercy of Allah.",ref:"39:53"},
+  {text:"And speak to people with good words.",ref:"2:83"},
+  {text:"Indeed, the mercy of Allah is near to the doers of good.",ref:"7:56"},
+  {text:"And He is with you wherever you are.",ref:"57:4"},
+  {text:"So which of the favours of your Lord would you deny?",ref:"55:13"},
+  {text:"And We created you in pairs.",ref:"78:8"},
+  {text:"Indeed, prayer prohibits immorality and wrongdoing.",ref:"29:45"},
+  {text:"And be grateful to Me and do not deny Me.",ref:"2:152"},
+  {text:"The best among you are those who learn the Quran and teach it.",ref:"Bukhari"},
+  {text:"And hold firmly to the rope of Allah all together and do not become divided.",ref:"3:103"},
+  {text:"Allah is the Light of the heavens and the earth.",ref:"24:35"},
+  {text:"And do good. Indeed, Allah loves the doers of good.",ref:"2:195"},
+  {text:"Whoever does righteousness, it is for his own soul.",ref:"45:15"},
+  {text:"And your Lord is the Most Forgiving, full of mercy.",ref:"18:58"},
+  {text:"The life of this world is merely the enjoyment of delusion.",ref:"3:185"},
+  {text:"And in the heaven is your provision and whatever you are promised.",ref:"51:22"},
+  {text:"He is the First and the Last, the Ascendant and the Intimate.",ref:"57:3"},
+  {text:"And when My servants ask you concerning Me, indeed I am near.",ref:"2:186"},
+  {text:"Every soul will taste death.",ref:"3:185"}
+];
+function dailyQuote(){const day=Math.floor(Date.now()/86400000);return QURAN_QUOTES[day%QURAN_QUOTES.length];}
+/* ============ DASHBOARD ============ */
+renderers.dashboard=function(){
+  const name=DB.get('name','');
+  const tasks=DB.get('tasks',[]), openTasks=tasks.filter(t=>!t.done).length;
+  const habits=DB.get('habits',[]); const t=todayISO();
+  const habitsDone=habits.filter(h=>(h.dates||[]).includes(t)).length;
+  const habitPct=habits.length?(habitsDone/habits.length)*100:0;
+  const books=DB.get('books',[]); const reading=books.filter(b=>b.status==='reading').length;
+  const sp=DB.get('surah_progress',{});
+  const completedSurahs=Object.values(sp).filter(v=>v.pct>=100).length;
+  const quranPct=Object.values(sp).reduce((s,v)=>s+(v.pct||0),0)/114;
+  // streak: days that had at least one session across all surahs
+  const allSessionDates=[...new Set(Object.values(sp).flatMap(v=>(v.sessions||[]).map(s=>s.date)))];
+  const qStreak=streakFromDates(allSessionDates);
+  const cyc=DB.get('cycle',{starts:[]}); const ci=cycleInfo(cyc.starts);
+
+  
+  const dq=dailyQuote();
+  const quoteCard=`<div class="card" style="margin-bottom:18px;border-color:var(--panel-edge);background:linear-gradient(150deg,rgba(255,148,8,.08),rgba(149,18,44,.1))">
+    <div style="display:flex;gap:14px;align-items:flex-start"><div style="font-size:28px;line-height:1;opacity:.7">\u2726</div><div><div style="font-size:15px;font-weight:600;line-height:1.6;color:var(--text)">&ldquo;${dq.text}&rdquo;</div><div style="font-size:12px;color:var(--amber);font-weight:700;margin-top:6px;font-family:\'JetBrains Mono\',monospace">${dq.ref}</div></div></div></div>`;
+  const welcome = !name ? `<div class="welcome">
+    <h2>Welcome to LifeHub 👋</h2>
+    <p>One private space for your deen, learning, reading, tasks and more. What should I call you?</p>
+    <div class="row" style="max-width:420px"><input class="field" id="nameInput" placeholder="Your name" data-enter="saveName" style="flex:2">
+    <button class="btn" data-act="saveName">Get started</button></div></div>` : '';
+
+  document.getElementById('view-dashboard').innerHTML = welcome + quoteCard + `
+    <div class="stat-row">
+      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><div class="label">Open tasks</div><div class="num">${openTasks}</div></div>
+      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><div class="label">Habits today</div><div class="num">${habitsDone}<small>/${habits.length||0}</small></div></div>
+      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></div><div class="label">Quran streak</div><div class="num">${qStreak}<small> d</small></div></div>
+      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/></svg></div><div class="label">Reading now</div><div class="num">${reading}</div></div>
+    </div>
+    <div class="grid" style="grid-template-columns:1.3fr 1fr">
+      <div class="card"><div class="card-head"><div><h3>Today's tasks</h3><div class="sub">What's on your plate</div></div><button class="btn btn-sm" data-act="nav" data-view="tasks">${ico.plus} Add</button></div><div id="dashTasks"></div></div>
+      <div class="card"><div class="card-head"><div><h3>Habits today</h3><div class="sub">Tap to check off</div></div></div>
+        <div class="ring-wrap" style="margin-bottom:18px">${ring(habitPct,Math.round(habitPct)+'%','done')}<div style="flex:1"><div style="font-size:13px;color:var(--muted);font-weight:600">${habitsDone} of ${habits.length||0} done</div><div class="sub" style="margin-top:4px">${habits.length?'Keep the streak alive.':'Add habits to start.'}</div></div></div><div id="dashHabits"></div></div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:18px">
+      <div class="card"><div class="card-head"><div><h3>Quran progress</h3><div class="sub">${completedSurahs} of 114 surahs complete</div></div><button class="btn btn-sm btn-ghost" data-act="nav" data-view="deen">Open</button></div>
+        <div class="ring-wrap">${ring(quranPct,Math.round(quranPct)+'%','overall')}<div style="flex:1"><div style="font-size:13px;color:var(--muted);font-weight:600">${completedSurahs} surahs done</div><div class="sub" style="margin-top:4px">Tap a surah in Deen to log progress.</div></div></div></div>
+      <div class="card"><div class="card-head"><div><h3>Cycle</h3><div class="sub">Private to this device</div></div><button class="btn btn-sm btn-ghost" data-act="nav" data-view="cycle">Open</button></div>
+        ${ci.starts<1?`<div class="sub" style="padding:10px 0">Log a period start date to see predictions.</div>`:
+        `<div style="display:flex;gap:28px;flex-wrap:wrap"><div><div class="sub">Cycle day</div><div class="mono" style="font-size:32px;font-weight:700;letter-spacing:-1px">${ci.cycleDay??'—'}</div></div>
+          <div><div class="sub">Next predicted</div><div style="font-size:17px;font-weight:700;margin-top:9px">${ci.next?fmtDate(ci.next):'—'}</div><div class="sub" style="margin-top:3px">${ci.daysToNext!=null?(ci.daysToNext>=0?'in '+ci.daysToNext+' days':Math.abs(ci.daysToNext)+' days late'):''}</div></div>
+          <div><div class="sub">Avg cycle</div><div class="mono" style="font-size:17px;font-weight:700;margin-top:9px">${ci.avg?ci.avg+'d':'—'}</div></div></div>`}</div>
+    </div>`;
+  const dt=document.getElementById('dashTasks'); const todays=tasks.filter(x=>!x.done).slice(0,5);
+  dt.innerHTML=todays.length?todays.map(taskLi).join(''):`<div class="sub" style="padding:6px 0">Nothing open — add a task.</div>`;
+  const dh=document.getElementById('dashHabits');
+  dh.innerHTML=habits.length?habits.slice(0,5).map(h=>{const on=(h.dates||[]).includes(t);return `<div class="li ${on?'done-li':''}" style="padding:11px 14px"><div class="cbx ${on?'on':''}" data-act="toggleHabit" data-id="${h.id}" data-date="${t}">${ico.check}</div><div class="grow"><div class="t">${esc(h.name)}</div></div><div class="m">🔥 ${streakFromDates(h.dates||[])}</div></div>`;}).join(''):'';
+};
+const taskLi = t => `<div class="li ${t.done?'done-li':''}"><div class="cbx ${t.done?'on':''}" data-act="toggleTask" data-id="${t.id}">${ico.check}</div><div class="grow"><div class="t">${esc(t.text)}</div></div><span class="chip ${t.cat}">${t.cat}</span></div>`;
+
+/* ============ DEEN ============ */
+/* ============ SURAH DATA ============ */
+const SURAHS=[
+  {n:1,name:"Al-Fatihah",arabic:"\u0627\u0644\u0641\u0627\u062a\u062d\u0629",js:1,je:1,pages:1},
+  {n:2,name:"Al-Baqarah",arabic:"\u0627\u0644\u0628\u0642\u0631\u0629",js:1,je:3,pages:49},
+  {n:3,name:"Ali 'Imran",arabic:"\u0622\u0644 \u0639\u0645\u0631\u0627\u0646",js:3,je:4,pages:20},
+  {n:4,name:"An-Nisa",arabic:"\u0627\u0644\u0646\u0633\u0627\u0621",js:4,je:6,pages:24},
+  {n:5,name:"Al-Ma'idah",arabic:"\u0627\u0644\u0645\u0627\u0626\u062f\u0629",js:6,je:7,pages:16},
+  {n:6,name:"Al-An'am",arabic:"\u0627\u0644\u0623\u0646\u0639\u0627\u0645",js:7,je:8,pages:21},
+  {n:7,name:"Al-A'raf",arabic:"\u0627\u0644\u0623\u0639\u0631\u0627\u0641",js:8,je:9,pages:24},
+  {n:8,name:"Al-Anfal",arabic:"\u0627\u0644\u0623\u0646\u0641\u0627\u0644",js:9,je:10,pages:10},
+  {n:9,name:"At-Tawbah",arabic:"\u0627\u0644\u062a\u0648\u0628\u0629",js:10,je:11,pages:19},
+  {n:10,name:"Yunus",arabic:"\u064a\u0648\u0646\u0633",js:11,je:11,pages:11},
+  {n:11,name:"Hud",arabic:"\u0647\u0648\u062f",js:11,je:12,pages:11},
+  {n:12,name:"Yusuf",arabic:"\u064a\u0648\u0633\u0641",js:12,je:13,pages:12},
+  {n:13,name:"Ar-Ra'd",arabic:"\u0627\u0644\u0631\u0639\u062f",js:13,je:13,pages:6},
+  {n:14,name:"Ibrahim",arabic:"\u0625\u0628\u0631\u0627\u0647\u064a\u0645",js:13,je:13,pages:6},
+  {n:15,name:"Al-Hijr",arabic:"\u0627\u0644\u062d\u062c\u0631",js:14,je:14,pages:6},
+  {n:16,name:"An-Nahl",arabic:"\u0627\u0644\u0646\u062d\u0644",js:14,je:14,pages:13},
+  {n:17,name:"Al-Isra",arabic:"\u0627\u0644\u0625\u0633\u0631\u0627\u0621",js:15,je:15,pages:12},
+  {n:18,name:"Al-Kahf",arabic:"\u0627\u0644\u0643\u0647\u0641",js:15,je:16,pages:12},
+  {n:19,name:"Maryam",arabic:"\u0645\u0631\u064a\u0645",js:16,je:16,pages:7},
+  {n:20,name:"Ta-Ha",arabic:"\u0637\u0647",js:16,je:16,pages:8},
+  {n:21,name:"Al-Anbiya",arabic:"\u0627\u0644\u0623\u0646\u0628\u064a\u0627\u0621",js:17,je:17,pages:11},
+  {n:22,name:"Al-Hajj",arabic:"\u0627\u0644\u062d\u062c",js:17,je:17,pages:10},
+  {n:23,name:"Al-Mu'minun",arabic:"\u0627\u0644\u0645\u0624\u0645\u0646\u0648\u0646",js:18,je:18,pages:9},
+  {n:24,name:"An-Nur",arabic:"\u0627\u0644\u0646\u0648\u0631",js:18,je:18,pages:9},
+  {n:25,name:"Al-Furqan",arabic:"\u0627\u0644\u0641\u0631\u0642\u0627\u0646",js:18,je:19,pages:7},
+  {n:26,name:"Ash-Shu'ara",arabic:"\u0627\u0644\u0634\u0639\u0631\u0627\u0621",js:19,je:19,pages:11},
+  {n:27,name:"An-Naml",arabic:"\u0627\u0644\u0646\u0645\u0644",js:19,je:20,pages:11},
+  {n:28,name:"Al-Qasas",arabic:"\u0627\u0644\u0642\u0635\u0635",js:20,je:20,pages:13},
+  {n:29,name:"Al-'Ankabut",arabic:"\u0627\u0644\u0639\u0646\u0643\u0628\u0648\u062a",js:20,je:21,pages:7},
+  {n:30,name:"Ar-Rum",arabic:"\u0627\u0644\u0631\u0648\u0645",js:21,je:21,pages:6},
+  {n:31,name:"Luqman",arabic:"\u0644\u0642\u0645\u0627\u0646",js:21,je:21,pages:4},
+  {n:32,name:"As-Sajdah",arabic:"\u0627\u0644\u0633\u062c\u062f\u0629",js:21,je:21,pages:3},
+  {n:33,name:"Al-Ahzab",arabic:"\u0627\u0644\u0623\u062d\u0632\u0627\u0628",js:21,je:22,pages:9},
+  {n:34,name:"Saba",arabic:"\u0633\u0628\u0623",js:22,je:22,pages:6},
+  {n:35,name:"Fatir",arabic:"\u0641\u0627\u0637\u0631",js:22,je:22,pages:5},
+  {n:36,name:"Ya-Sin",arabic:"\u064a\u0633",js:22,je:23,pages:5},
+  {n:37,name:"As-Saffat",arabic:"\u0627\u0644\u0635\u0627\u0641\u0627\u062a",js:23,je:23,pages:7},
+  {n:38,name:"Sad",arabic:"\u0635",js:23,je:23,pages:5},
+  {n:39,name:"Az-Zumar",arabic:"\u0627\u0644\u0632\u0645\u0631",js:23,je:24,pages:8},
+  {n:40,name:"Ghafir",arabic:"\u063a\u0627\u0641\u0631",js:24,je:24,pages:9},
+  {n:41,name:"Fussilat",arabic:"\u0641\u0635\u0644\u062a",js:24,je:25,pages:8},
+  {n:42,name:"Ash-Shura",arabic:"\u0627\u0644\u0634\u0648\u0631\u0649",js:25,je:25,pages:7},
+  {n:43,name:"Az-Zukhruf",arabic:"\u0627\u0644\u0632\u062e\u0631\u0641",js:25,je:25,pages:7},
+  {n:44,name:"Ad-Dukhan",arabic:"\u0627\u0644\u062f\u062e\u0627\u0646",js:25,je:25,pages:3},
+  {n:45,name:"Al-Jathiyah",arabic:"\u0627\u0644\u062c\u0627\u062b\u064a\u0629",js:25,je:25,pages:4},
+  {n:46,name:"Al-Ahqaf",arabic:"\u0627\u0644\u0623\u062d\u0642\u0627\u0641",js:26,je:26,pages:5},
+  {n:47,name:"Muhammad",arabic:"\u0645\u062d\u0645\u062f",js:26,je:26,pages:4},
+  {n:48,name:"Al-Fath",arabic:"\u0627\u0644\u0641\u062a\u062d",js:26,je:26,pages:4},
+  {n:49,name:"Al-Hujurat",arabic:"\u0627\u0644\u062d\u062c\u0631\u0627\u062a",js:26,je:26,pages:2},
+  {n:50,name:"Qaf",arabic:"\u0642",js:26,je:26,pages:3},
+  {n:51,name:"Adh-Dhariyat",arabic:"\u0627\u0644\u0630\u0627\u0631\u064a\u0627\u062a",js:26,je:27,pages:3},
+  {n:52,name:"At-Tur",arabic:"\u0627\u0644\u0637\u0648\u0631",js:27,je:27,pages:3},
+  {n:53,name:"An-Najm",arabic:"\u0627\u0644\u0646\u062c\u0645",js:27,je:27,pages:3},
+  {n:54,name:"Al-Qamar",arabic:"\u0627\u0644\u0642\u0645\u0631",js:27,je:27,pages:3},
+  {n:55,name:"Ar-Rahman",arabic:"\u0627\u0644\u0631\u062d\u0645\u0646",js:27,je:27,pages:4},
+  {n:56,name:"Al-Waqi'ah",arabic:"\u0627\u0644\u0648\u0627\u0642\u0639\u0629",js:27,je:27,pages:4},
+  {n:57,name:"Al-Hadid",arabic:"\u0627\u0644\u062d\u062f\u064a\u062f",js:27,je:27,pages:5},
+  {n:58,name:"Al-Mujadila",arabic:"\u0627\u0644\u0645\u062c\u0627\u062f\u0644\u0629",js:28,je:28,pages:4},
+  {n:59,name:"Al-Hashr",arabic:"\u0627\u0644\u062d\u0634\u0631",js:28,je:28,pages:4},
+  {n:60,name:"Al-Mumtahanah",arabic:"\u0627\u0644\u0645\u0645\u062a\u062d\u0646\u0629",js:28,je:28,pages:3},
+  {n:61,name:"As-Saf",arabic:"\u0627\u0644\u0635\u0641",js:28,je:28,pages:2},
+  {n:62,name:"Al-Jumu'ah",arabic:"\u0627\u0644\u062c\u0645\u0639\u0629",js:28,je:28,pages:2},
+  {n:63,name:"Al-Munafiqun",arabic:"\u0627\u0644\u0645\u0646\u0627\u0641\u0642\u0648\u0646",js:28,je:28,pages:2},
+  {n:64,name:"At-Taghabun",arabic:"\u0627\u0644\u062a\u063a\u0627\u0628\u0646",js:28,je:28,pages:2},
+  {n:65,name:"At-Talaq",arabic:"\u0627\u0644\u0637\u0644\u0627\u0642",js:28,je:28,pages:2},
+  {n:66,name:"At-Tahrim",arabic:"\u0627\u0644\u062a\u062d\u0631\u064a\u0645",js:28,je:28,pages:2},
+  {n:67,name:"Al-Mulk",arabic:"\u0627\u0644\u0645\u0644\u0643",js:29,je:29,pages:3},
+  {n:68,name:"Al-Qalam",arabic:"\u0627\u0644\u0642\u0644\u0645",js:29,je:29,pages:3},
+  {n:69,name:"Al-Haqqah",arabic:"\u0627\u0644\u062d\u0627\u0642\u0629",js:29,je:29,pages:2},
+  {n:70,name:"Al-Ma'arij",arabic:"\u0627\u0644\u0645\u0639\u0627\u0631\u062c",js:29,je:29,pages:2},
+  {n:71,name:"Nuh",arabic:"\u0646\u0648\u062d",js:29,je:29,pages:2},
+  {n:72,name:"Al-Jinn",arabic:"\u0627\u0644\u062c\u0646",js:29,je:29,pages:2},
+  {n:73,name:"Al-Muzzammil",arabic:"\u0627\u0644\u0645\u0632\u0645\u0644",js:29,je:29,pages:2},
+  {n:74,name:"Al-Muddaththir",arabic:"\u0627\u0644\u0645\u062f\u062b\u0631",js:29,je:29,pages:2},
+  {n:75,name:"Al-Qiyamah",arabic:"\u0627\u0644\u0642\u064a\u0627\u0645\u0629",js:29,je:29,pages:2},
+  {n:76,name:"Al-Insan",arabic:"\u0627\u0644\u0625\u0646\u0633\u0627\u0646",js:29,je:29,pages:2},
+  {n:77,name:"Al-Mursalat",arabic:"\u0627\u0644\u0645\u0631\u0633\u0644\u0627\u062a",js:29,je:29,pages:2},
+  {n:78,name:"An-Naba",arabic:"\u0627\u0644\u0646\u0628\u0623",js:30,je:30,pages:2},
+  {n:79,name:"An-Nazi'at",arabic:"\u0627\u0644\u0646\u0627\u0632\u0639\u0627\u062a",js:30,je:30,pages:2},
+  {n:80,name:"Abasa",arabic:"\u0639\u0628\u0633",js:30,je:30,pages:1},
+  {n:81,name:"At-Takwir",arabic:"\u0627\u0644\u062a\u0643\u0648\u064a\u0631",js:30,je:30,pages:1},
+  {n:82,name:"Al-Infitar",arabic:"\u0627\u0644\u0627\u0646\u0641\u0637\u0627\u0631",js:30,je:30,pages:1},
+  {n:83,name:"Al-Mutaffifin",arabic:"\u0627\u0644\u0645\u0637\u0641\u0641\u064a\u0646",js:30,je:30,pages:2},
+  {n:84,name:"Al-Inshiqaq",arabic:"\u0627\u0644\u0627\u0646\u0634\u0642\u0627\u0642",js:30,je:30,pages:1},
+  {n:85,name:"Al-Buruj",arabic:"\u0627\u0644\u0628\u0631\u0648\u062c",js:30,je:30,pages:1},
+  {n:86,name:"At-Tariq",arabic:"\u0627\u0644\u0637\u0627\u0631\u0642",js:30,je:30,pages:1},
+  {n:87,name:"Al-A'la",arabic:"\u0627\u0644\u0623\u0639\u0644\u0649",js:30,je:30,pages:1},
+  {n:88,name:"Al-Ghashiyah",arabic:"\u0627\u0644\u063a\u0627\u0634\u064a\u0629",js:30,je:30,pages:1},
+  {n:89,name:"Al-Fajr",arabic:"\u0627\u0644\u0641\u062c\u0631",js:30,je:30,pages:2},
+  {n:90,name:"Al-Balad",arabic:"\u0627\u0644\u0628\u0644\u062f",js:30,je:30,pages:1},
+  {n:91,name:"Ash-Shams",arabic:"\u0627\u0644\u0634\u0645\u0633",js:30,je:30,pages:1},
+  {n:92,name:"Al-Layl",arabic:"\u0627\u0644\u0644\u064a\u0644",js:30,je:30,pages:1},
+  {n:93,name:"Ad-Duhaa",arabic:"\u0627\u0644\u0636\u062d\u0649",js:30,je:30,pages:1},
+  {n:94,name:"Ash-Sharh",arabic:"\u0627\u0644\u0634\u0631\u062d",js:30,je:30,pages:1},
+  {n:95,name:"At-Tin",arabic:"\u0627\u0644\u062a\u064a\u0646",js:30,je:30,pages:1},
+  {n:96,name:"Al-'Alaq",arabic:"\u0627\u0644\u0639\u0644\u0642",js:30,je:30,pages:1},
+  {n:97,name:"Al-Qadr",arabic:"\u0627\u0644\u0642\u062f\u0631",js:30,je:30,pages:1},
+  {n:98,name:"Al-Bayyinah",arabic:"\u0627\u0644\u0628\u064a\u0646\u0629",js:30,je:30,pages:2},
+  {n:99,name:"Az-Zalzalah",arabic:"\u0627\u0644\u0632\u0644\u0632\u0644\u0629",js:30,je:30,pages:1},
+  {n:100,name:"Al-'Adiyat",arabic:"\u0627\u0644\u0639\u0627\u062f\u064a\u0627\u062a",js:30,je:30,pages:1},
+  {n:101,name:"Al-Qari'ah",arabic:"\u0627\u0644\u0642\u0627\u0631\u0639\u0629",js:30,je:30,pages:1},
+  {n:102,name:"At-Takathur",arabic:"\u0627\u0644\u062a\u0643\u0627\u062b\u0631",js:30,je:30,pages:1},
+  {n:103,name:"Al-'Asr",arabic:"\u0627\u0644\u0639\u0635\u0631",js:30,je:30,pages:1},
+  {n:104,name:"Al-Humazah",arabic:"\u0627\u0644\u0647\u0645\u0632\u0629",js:30,je:30,pages:1},
+  {n:105,name:"Al-Fil",arabic:"\u0627\u0644\u0641\u064a\u0644",js:30,je:30,pages:1},
+  {n:106,name:"Quraysh",arabic:"\u0642\u0631\u064a\u0634",js:30,je:30,pages:1},
+  {n:107,name:"Al-Ma'un",arabic:"\u0627\u0644\u0645\u0627\u0639\u0648\u0646",js:30,je:30,pages:1},
+  {n:108,name:"Al-Kawthar",arabic:"\u0627\u0644\u0643\u0648\u062b\u0631",js:30,je:30,pages:1},
+  {n:109,name:"Al-Kafirun",arabic:"\u0627\u0644\u0643\u0627\u0641\u0631\u0648\u0646",js:30,je:30,pages:1},
+  {n:110,name:"An-Nasr",arabic:"\u0627\u0644\u0646\u0635\u0631",js:30,je:30,pages:1},
+  {n:111,name:"Al-Masad",arabic:"\u0627\u0644\u0645\u0633\u062f",js:30,je:30,pages:1},
+  {n:112,name:"Al-Ikhlas",arabic:"\u0627\u0644\u0625\u062e\u0644\u0627\u0635",js:30,je:30,pages:1},
+  {n:113,name:"Al-Falaq",arabic:"\u0627\u0644\u0641\u0644\u0642",js:30,je:30,pages:1},
+  {n:114,name:"An-Nas",arabic:"\u0627\u0644\u0646\u0627\u0633",js:30,je:30,pages:1}
+];
+
+/* ============ DEEN ============ */
+let openJuz=new Set([1]);
+function getSurahProgress(n){const sp=DB.get('surah_progress',{});return sp[n]||{pct:0,sessions:[]};}
+function allSurahProgress(){return DB.get('surah_progress',{});}
+
+renderers.deen=function(){
+  const notes=DB.get('inotes',[]);
+  const sp=allSurahProgress();
+  const completedSurahs=SURAHS.filter(s=>(sp[s.n]||{}).pct>=100).length;
+  const startedSurahs=SURAHS.filter(s=>(sp[s.n]||{}).pct>0&&(sp[s.n]||{}).pct<100).length;
+  const totalPct=SURAHS.reduce((sum,s)=>sum+((sp[s.n]||{}).pct||0),0)/114;
+  document.getElementById('view-deen').innerHTML=`
+    <div class="quran-overview">
+      <div class="q-stat"><div class="q-val">${completedSurahs}</div><div class="q-lbl">Surahs complete</div></div>
+      <div class="q-stat"><div class="q-val">${startedSurahs}</div><div class="q-lbl">In progress</div></div>
+      <div class="q-stat"><div class="q-val">${114-completedSurahs-startedSurahs}</div><div class="q-lbl">Not started</div></div>
+      <div class="q-stat"><div class="q-val">${Math.round(totalPct)}%</div><div class="q-lbl">Overall Quran</div></div>
+    </div>
+    <div id="juzGrid"></div>
+    <div class="section-title" style="margin-top:28px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Notes & reminders</div>
+    <div class="card" style="margin-bottom:18px"><div class="row" style="margin-bottom:10px"><input class="field" id="inT" placeholder="Title (reminder, dua, ayah…)"></div><textarea class="field" id="inB" placeholder="Write your note…" style="margin-bottom:12px"></textarea><button class="btn btn-sm" data-act="addINote">${ico.plus} Add note</button></div>
+    <div class="two-col" id="inotes"></div>`;
+  renderJuzGrid();
+  document.getElementById('inotes').innerHTML=notes.length?notes.map(n=>`<div class="note-card"><button class="del ndel" data-act="delINote" data-id="${n.id}">\xd7</button><div class="t">${esc(n.title)||'Untitled'}</div><div class="b">${esc(n.body)}</div><div class="d">${fmtDate(n.date)}</div></div>`).join(''):emptyState('No notes yet.');
+};
+
+function renderJuzGrid(){
+  const sp=allSurahProgress();
+  const wrap=document.getElementById('juzGrid');if(!wrap)return;
+  wrap.innerHTML=[...Array(30)].map((_,i)=>{
+    const jNum=i+1;
+    const surahs=SURAHS.filter(s=>s.js<=jNum&&s.je>=jNum);
+    const juzPct=surahs.length?Math.round(surahs.reduce((sum,s)=>sum+((sp[s.n]||{}).pct||0),0)/surahs.length):0;
+    const isOpen=openJuz.has(jNum);
+    return `<div class="juz-block ${isOpen?'open':''}" id="juz-${jNum}">
+      <div class="juz-header" data-act="toggleJuz" data-juz="${jNum}">
+        <div class="juz-num">${jNum}</div>
+        <div class="juz-title"><b>Juz ${jNum}</b><span>${surahs.length} surah${surahs.length>1?'s':''} &middot; ${surahs[0].name}${surahs.length>1?' – '+surahs[surahs.length-1].name:''}</span></div>
+        <div class="juz-bar-wrap"><div class="juz-bar-pct">${juzPct}%</div><div class="bar" style="margin:0"><i style="width:${juzPct}%"></i></div></div>
+        <svg class="juz-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="juz-surahs">${surahs.map(s=>{
+        const pct=(sp[s.n]||{}).pct||0;
+        const cls=pct>=100?'complete':pct>0?'partial':'';
+        return `<div class="surah-tile ${cls}" data-act="openSurah" data-n="${s.n}"><div class="tile-glow"></div><div class="s-num">${s.n}</div><div class="s-name">${esc(s.name)}</div><div class="s-arabic">${s.arabic}</div><div class="s-pct">${pct>0?pct+'%':'not started'}</div><div class="s-fill" style="width:${pct}%"></div></div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleJuz(jNum){
+  jNum=+jNum;
+  if(openJuz.has(jNum))openJuz.delete(jNum);else openJuz.add(jNum);
+  const block=document.getElementById('juz-'+jNum);
+  if(block)block.classList.toggle('open',openJuz.has(jNum));
+}
+
+function openSurahModal(n){
+  n=+n;const s=SURAHS.find(x=>x.n===n);if(!s)return;
+  const prog=getSurahProgress(n);
+  const existing=document.getElementById('surah-modal-bg');if(existing)existing.remove();
+  const bg=document.createElement('div');bg.className='sq-modal-bg';bg.id='surah-modal-bg';
+  bg.innerHTML=`<div class="sq-modal">
+    <button class="sq-close" data-act="closeSurahModal">&times;</button>
+    <h3>${esc(s.name)}</h3>
+    <div class="sq-arabic">${s.arabic}</div>
+    <div class="sq-meta">Surah ${s.n} &middot; Juz ${s.js}${s.js!==s.je?' \u2013 '+s.je:''} &middot; ~${s.pages} page${s.pages>1?'s':''}</div>
+    <div class="sq-pct-display" id="sqPctDisp">${prog.pct||0}%</div>
+    <input type="range" class="sq-slider" id="sqSlider" min="0" max="100" step="5" value="${prog.pct||0}">
+    <div class="sq-slider-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    <label class="lbl">Log this session</label>
+    <div class="sq-log-row">
+      <input class="field" id="sqAyahFrom" placeholder="From ayah (e.g. 1)" type="number" min="1">
+      <input class="field" id="sqAyahTo" placeholder="To ayah" type="number" min="1">
+      <input class="field" id="sqPages" placeholder="Pages read" type="number" min="1" max="${s.pages}">
+    </div>
+    <input class="field" id="sqDate" type="date" value="${todayISO()}" style="margin-bottom:12px">
+    <button class="btn" style="width:100%;justify-content:center;margin-bottom:16px" data-act="saveSurahSession" data-n="${s.n}">Save session &amp; progress</button>
+    ${prog.sessions&&prog.sessions.length?`<div class="sub" style="margin-bottom:8px;font-weight:700">Previous sessions</div><div class="sq-sessions">${[...prog.sessions].reverse().map(ses=>`<div class="li"><div class="grow"><div class="t">${ses.ayahFrom?'Ayah '+ses.ayahFrom+' – '+ses.ayahTo:'Session'} ${ses.pages?'&middot; '+ses.pages+' pages':''}</div><div class="m">${fmtDate(ses.date)}</div></div><button class="del" data-act="delSurahSession" data-n="${s.n}" data-sid="${ses.id}">&times;</button></div>`).join('')}</div>`:''}
+  </div>`;
+  document.body.appendChild(bg);
+  const slider=bg.querySelector('#sqSlider');
+  slider.addEventListener('input',()=>{bg.querySelector('#sqPctDisp').textContent=slider.value+'%';});
+  bg.addEventListener('click',e=>{if(e.target===bg)closeSurahModal();});
+}
+
+function closeSurahModal(){const m=document.getElementById('surah-modal-bg');if(m)m.remove();}
+
+function saveSurahSession(n){
+  n=+n;
+  const slider=document.getElementById('sqSlider');
+  const pct=slider?+slider.value:0;
+  const ayahFrom=document.getElementById('sqAyahFrom')?.value.trim()||null;
+  const ayahTo=document.getElementById('sqAyahTo')?.value.trim()||null;
+  const pages=document.getElementById('sqPages')?.value.trim()||null;
+  const date=val('sqDate')||todayISO();
+  const sp=DB.get('surah_progress',{});
+  if(!sp[n])sp[n]={pct:0,sessions:[]};
+  sp[n].pct=pct;
+  if(ayahFrom||ayahTo||pages)sp[n].sessions.push({id:uid(),date,ayahFrom:ayahFrom||null,ayahTo:ayahTo||null,pages:pages?+pages:null});
+  DB.set('surah_progress',sp);
+  closeSurahModal();
+  renderers.deen();
+  if(currentView()==='dashboard')renderers.dashboard();
+}
+
+function delSurahSession(n,sid){
+  n=+n;
+  const sp=DB.get('surah_progress',{});
+  if(sp[n])sp[n].sessions=(sp[n].sessions||[]).filter(s=>s.id!==sid);
+  DB.set('surah_progress',sp);
+  openSurahModal(n);
+  renderJuzGrid();
+}
+
+function addINote(){const t=val('inT').trim(),b=val('inB').trim();if(!t&&!b){flash('inT');return;}const n=DB.get('inotes',[]);n.unshift({id:uid(),title:t,body:b,date:todayISO()});DB.set('inotes',n);renderers.deen();}
+function delINote(id){let n=DB.get('inotes',[]);n=n.filter(x=>x.id!==id);DB.set('inotes',n);renderers.deen();}
+
+
+/* ============ LEARNING ============ */
+renderers.learning=function(){
+  const items=DB.get('learning',[]);
+  document.getElementById('view-learning').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>Add a course</h3><div class="sub">Track what you're studying</div></div></div>
+      <div class="row" style="margin-bottom:10px"><input class="field" id="lT" placeholder="Course / topic" style="flex:2"><input class="field" id="lP" placeholder="Platform" style="flex:1.4"></div>
+      <div class="row"><input class="field" id="lProg" type="number" min="0" max="100" placeholder="Progress %" style="flex:1"><select class="field" id="lStat" style="flex:1"><option value="todo">To start</option><option value="active">In progress</option><option value="done">Completed</option></select><button class="btn" data-act="addLearning">${ico.plus} Add</button></div></div>
+    <div id="lList"></div>`;
+  document.getElementById('lList').innerHTML=items.length?items.map(c=>`<div class="card" style="margin-bottom:12px;padding:20px 24px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:13px"><div class="grow"><div style="font-weight:700;font-size:15px">${esc(c.title)}</div><div style="font-size:12.5px;color:var(--dim);margin-top:2px">${esc(c.platform)||'—'}</div></div><span class="chip ${c.status==='done'?'done':c.status==='active'?'reading':'want'}">${c.status==='done'?'Completed':c.status==='active'?'In progress':'To start'}</span><button class="del" data-act="delLearning" data-id="${c.id}">×</button></div><div style="display:flex;align-items:center;gap:12px"><div class="bar" style="flex:1;margin:0"><i style="width:${c.progress||0}%"></i></div><span class="mono" style="font-size:12.5px;font-weight:700;color:var(--amber);width:42px;text-align:right">${c.progress||0}%</span></div></div>`).join(''):`<div class="card">${emptyState('No courses yet. Add one above.')}</div>`;
+};
+function addLearning(){const title=val('lT').trim();if(!title){flash('lT');return;}const platform=val('lP').trim();const progress=Math.max(0,Math.min(100,+val('lProg')||0));const status=val('lStat');const items=DB.get('learning',[]);items.unshift({id:uid(),title,platform,progress,status});DB.set('learning',items);renderers.learning();}
+function delLearning(id){let i=DB.get('learning',[]);i=i.filter(x=>x.id!==id);DB.set('learning',i);renderers.learning();}
+
+/* ============ YOUTUBE ============ */
+const ytId=url=>{const m=(url||'').match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);return m?m[1]:null;};
+renderers.youtube=function(){
+  const items=DB.get('youtube',[]); const pls=[...new Set(items.map(i=>i.playlist||'Unsorted'))];
+  document.getElementById('view-youtube').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>Add to watchlist</h3><div class="sub">Paste a YouTube link — thumbnail loads automatically</div></div></div>
+      <div class="row" style="margin-bottom:10px"><input class="field" id="yUrl" placeholder="https://youtube.com/watch?v=…" style="flex:2"><input class="field" id="yPl" placeholder="Playlist / topic (optional)" style="flex:1.2"></div>
+      <div class="row"><input class="field" id="yTitle" placeholder="Title (optional)" style="flex:2"><button class="btn" data-act="addYT">${ico.plus} Add</button></div></div>
+    <div id="ytWrap"></div>`;
+  const wrap=document.getElementById('ytWrap');
+  if(!items.length){wrap.innerHTML=`<div class="card">${emptyState('Watchlist empty. Paste a link above.')}</div>`;return;}
+  wrap.innerHTML=pls.map(pl=>{const vids=items.filter(i=>(i.playlist||'Unsorted')===pl);
+    return `<div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/></svg> ${esc(pl)} <span class="ct">${vids.length}</span></div>
+    <div class="yt-grid">${vids.map(v=>{const id=ytId(v.url);const thumb=id?`<img class="thumb" data-fallback src="https://img.youtube.com/vi/${id}/hqdefault.jpg">`:`<div class="thumb-fallback">no preview</div>`;
+      return `<div class="yt"><a href="${esc(v.url)}" target="_blank" rel="noopener">${thumb}<div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></a><button class="ytdel" data-act="delYT" data-id="${v.id}">×</button><div class="body"><div class="t">${esc(v.title)||(id?'YouTube video':esc(v.url))}</div>${v.playlist?`<div class="pl">${esc(v.playlist)}</div>`:''}</div></div>`;}).join('')}</div>`;
+  }).join('');
+};
+function addYT(){const url=val('yUrl').trim();if(!url){flash('yUrl');return;}const playlist=val('yPl').trim()||'Unsorted';const title=val('yTitle').trim();const items=DB.get('youtube',[]);items.unshift({id:uid(),url,playlist,title});DB.set('youtube',items);renderers.youtube();}
+function delYT(id){let i=DB.get('youtube',[]);i=i.filter(x=>x.id!==id);DB.set('youtube',i);renderers.youtube();}
+
+/* ============ BOOKS ============ */
+let bookFilter='all';
+renderers.books=function(){
+  const books=DB.get('books',[]); const counts={all:books.length,want:0,reading:0,done:0}; books.forEach(b=>counts[b.status]++);
+  const shown=bookFilter==='all'?books:books.filter(b=>b.status===bookFilter); const labels={want:'Want to read',reading:'Reading',done:'Read'};
+  document.getElementById('view-books').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>Add a book</h3><div class="sub">Build your reading list</div></div></div>
+      <div class="row"><input class="field" id="bT" placeholder="Title" style="flex:2"><input class="field" id="bA" placeholder="Author" style="flex:1.4"><select class="field" id="bS" style="flex:1"><option value="want">Want to read</option><option value="reading">Reading</option><option value="done">Read</option></select><button class="btn" data-act="addBook">${ico.plus}</button></div></div>
+    <div class="tabs">${['all','want','reading','done'].map(f=>`<button class="tab ${bookFilter===f?'active':''}" data-act="setBookFilter" data-f="${f}">${f==='all'?'All':labels[f]} (${counts[f]})</button>`).join('')}</div>
+    <div id="bList"></div>`;
+  document.getElementById('bList').innerHTML=shown.length?shown.map(b=>`<div class="li"><div class="grow"><div class="t">${esc(b.title)}</div><div class="m">${esc(b.author)||'Unknown author'}</div></div><select class="field" style="width:auto;padding:8px 10px;font-size:12.5px" data-change="setBookStatus" data-id="${b.id}"><option value="want" ${b.status==='want'?'selected':''}>Want to read</option><option value="reading" ${b.status==='reading'?'selected':''}>Reading</option><option value="done" ${b.status==='done'?'selected':''}>Read</option></select><button class="del" data-act="delBook" data-id="${b.id}">×</button></div>`).join(''):emptyState('Nothing here yet.');
+};
+function setBookFilter(f){bookFilter=f;renderers.books();}
+function addBook(){const title=val('bT').trim();if(!title){flash('bT');return;}const author=val('bA').trim(),status=val('bS');const b=DB.get('books',[]);b.unshift({id:uid(),title,author,status});DB.set('books',b);renderers.books();}
+function setBookStatus(id,s){const b=DB.get('books',[]);const x=b.find(z=>z.id===id);if(x){x.status=s;DB.set('books',b);renderers.books();}}
+function delBook(id){let b=DB.get('books',[]);b=b.filter(x=>x.id!==id);DB.set('books',b);renderers.books();}
+
+/* ============ TASKS ============ */
+let taskFilter='all'; const CATS=['work','personal','deen','health','other'];
+renderers.tasks=function(){
+  const tasks=DB.get('tasks',[]); const shown=taskFilter==='all'?tasks:tasks.filter(t=>t.cat===taskFilter);
+  const counts={all:tasks.length}; CATS.forEach(c=>counts[c]=tasks.filter(t=>t.cat===c).length);
+  document.getElementById('view-tasks').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>Add a task</h3><div class="sub">Organised by category</div></div></div>
+      <div class="row"><input class="field" id="tT" placeholder="What needs doing?" style="flex:2" data-enter="addTask"><select class="field" id="tC" style="flex:1">${CATS.map(c=>`<option value="${c}">${c[0].toUpperCase()+c.slice(1)}</option>`).join('')}</select><button class="btn" data-act="addTask">${ico.plus} Add</button></div></div>
+    <div class="tabs"><button class="tab ${taskFilter==='all'?'active':''}" data-act="setTaskFilter" data-f="all">All (${counts.all})</button>${CATS.map(c=>`<button class="tab ${taskFilter===c?'active':''}" data-act="setTaskFilter" data-f="${c}">${c[0].toUpperCase()+c.slice(1)} (${counts[c]})</button>`).join('')}</div>
+    <div class="card"><div id="tList"></div></div>`;
+  const open=shown.filter(t=>!t.done),done=shown.filter(t=>t.done);
+  document.getElementById('tList').innerHTML=(open.length||done.length)?(open.map(taskLi).join('')+(done.length?`<div class="sub" style="margin:18px 0 10px;font-weight:700">Done</div>`+done.map(taskLi).join(''):'')):emptyState('No tasks here. Add one above.');
+};
+function setTaskFilter(f){taskFilter=f;renderers.tasks();}
+function addTask(){const text=val('tT').trim();if(!text){flash('tT');return;}const cat=val('tC');const t=DB.get('tasks',[]);t.unshift({id:uid(),text,cat,done:false});DB.set('tasks',t);const f=document.getElementById('tT');if(f)f.value='';renderers.tasks();}
+function toggleTask(id){const t=DB.get('tasks',[]);const x=t.find(z=>z.id===id);if(x){x.done=!x.done;DB.set('tasks',t);rerender();}}
+
+/* ============ HABITS ============ */
+function streakFromDates(dates){if(!dates||!dates.length)return 0;const set=new Set(dates);let s=0,d=todayISO();if(!set.has(d))d=addDays(d,-1);while(set.has(d)){s++;d=addDays(d,-1);}return s;}
+renderers.habits=function(){
+  const habits=DB.get('habits',[]); const days=[];for(let i=6;i>=0;i--)days.push(addDays(todayISO(),-i)); const dow=['S','M','T','W','T','F','S'];
+  document.getElementById('view-habits').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>Add a habit</h3><div class="sub">Track daily — tap a day to mark done</div></div></div>
+      <div class="row"><input class="field" id="hN" placeholder="e.g. Read Quran, Walk, Sleep early" style="flex:2" data-enter="addHabit"><button class="btn" data-act="addHabit">${ico.plus} Add</button></div></div>
+    <div id="hList"></div>`;
+  document.getElementById('hList').innerHTML=habits.length?habits.map(h=>{const set=new Set(h.dates||[]);
+    return `<div class="card" style="margin-bottom:12px;padding:20px 24px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:15px"><div class="grow"><div style="font-weight:700;font-size:15px">${esc(h.name)}</div></div><span class="chip">🔥 ${streakFromDates(h.dates||[])} day streak</span><button class="del" data-act="delHabit" data-id="${h.id}">×</button></div><div class="hweek">${days.map(d=>`<div class="hday ${set.has(d)?'on':''}" data-act="toggleHabit" data-id="${h.id}" data-date="${d}" title="${fmtDate(d)}">${dow[new Date(d+'T00:00').getDay()]}</div>`).join('')}</div></div>`;}).join(''):`<div class="card">${emptyState('No habits yet. Add one above.')}</div>`;
+};
+function addHabit(){const name=val('hN').trim();if(!name){flash('hN');return;}const h=DB.get('habits',[]);h.push({id:uid(),name,dates:[]});DB.set('habits',h);const f=document.getElementById('hN');if(f)f.value='';renderers.habits();}
+function toggleHabit(id,date){const h=DB.get('habits',[]);const x=h.find(z=>z.id===id);if(!x)return;x.dates=x.dates||[];const i=x.dates.indexOf(date);if(i>=0)x.dates.splice(i,1);else x.dates.push(date);DB.set('habits',h);rerender();}
+function delHabit(id){let h=DB.get('habits',[]);h=h.filter(x=>x.id!==id);DB.set('habits',h);renderers.habits();}
+
+/* ============ JOURNAL ============ */
+renderers.journal=function(){
+  const entries=DB.get('journal',[]);
+  document.getElementById('view-journal').innerHTML=`
+    <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>New entry</h3><div class="sub">${fmtDate(todayISO())}</div></div></div>
+      <input class="field" id="jT" placeholder="Title (optional)" style="margin-bottom:10px"><textarea class="field" id="jB" placeholder="Write freely…" style="min-height:120px;margin-bottom:12px"></textarea><button class="btn btn-sm" data-act="addJournal">${ico.plus} Save entry</button></div>
+    <div id="jList"></div>`;
+  document.getElementById('jList').innerHTML=entries.length?entries.map(e=>`<div class="card" style="margin-bottom:12px;position:relative"><button class="del" style="position:absolute;top:18px;right:18px" data-act="delJournal" data-id="${e.id}">×</button><div class="mono" style="font-size:11px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${fmtDate(e.date)}</div><div style="font-weight:700;font-size:16px;margin:7px 0 9px;padding-right:24px">${esc(e.title)||'Untitled'}</div><div style="color:var(--muted);font-size:13.5px;white-space:pre-wrap;line-height:1.65">${esc(e.body)}</div></div>`).join(''):`<div class="card">${emptyState('No entries yet.')}</div>`;
+};
+function addJournal(){const title=val('jT').trim(),body=val('jB').trim();if(!title&&!body){flash('jB');return;}const j=DB.get('journal',[]);j.unshift({id:uid(),title,body,date:todayISO()});DB.set('journal',j);renderers.journal();}
+function delJournal(id){let j=DB.get('journal',[]);j=j.filter(x=>x.id!==id);DB.set('journal',j);renderers.journal();}
+
+/* ============ CYCLE ============ */
+function cycleInfo(starts){const s=[...(starts||[])].sort();const out={starts:s.length,avg:null,cycleDay:null,next:null,daysToNext:null};
+  if(s.length>=2){const gaps=[];for(let i=1;i<s.length;i++)gaps.push(daysBetween(s[i-1],s[i]));out.avg=Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length);}
+  if(s.length>=1){const last=s[s.length-1];out.cycleDay=daysBetween(last,todayISO())+1;if(out.avg){out.next=addDays(last,out.avg);out.daysToNext=daysBetween(todayISO(),out.next);}}return out;}
+renderers.cycle=function(){
+  const cyc=DB.get('cycle',{starts:[]}); const info=cycleInfo(cyc.starts); const sorted=[...cyc.starts].sort((a,b)=>b.localeCompare(a)); const full=[...cyc.starts].sort();
+  document.getElementById('view-cycle').innerHTML=`
+    <div class="card" style="margin-bottom:18px;border-color:var(--panel-edge)"><div class="sub" style="line-height:1.6">A simple log-and-estimate tool. Predictions are just the average of your recorded cycle lengths — not medical advice, and real cycles vary. Stored only in this browser.</div></div>
+    <div class="stat-row">
+      <div class="stat"><div class="label">Current cycle day</div><div class="num">${info.cycleDay??'—'}</div></div>
+      <div class="stat"><div class="label">Average cycle</div><div class="num">${info.avg??'—'}<small>${info.avg?' d':''}</small></div></div>
+      <div class="stat"><div class="label">Next predicted</div><div class="num" style="font-size:19px;margin-top:16px">${info.next?fmtDate(info.next):'—'}</div></div>
+      <div class="stat"><div class="label">${info.daysToNext!=null&&info.daysToNext<0?'Days late':'Days until next'}</div><div class="num">${info.daysToNext!=null?Math.abs(info.daysToNext):'—'}</div></div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1.4fr">
+      <div class="card"><div class="card-head"><div><h3>Log period start</h3><div class="sub">First day of a period</div></div></div><div class="row"><input class="field" id="cDate" type="date" value="${todayISO()}" max="${todayISO()}" style="flex:1.6"><button class="btn" data-act="addCycle">${ico.plus} Log</button></div>${info.starts<2?`<div class="sub" style="margin-top:14px">Log at least 2 start dates for an estimate.</div>`:''}</div>
+      <div class="card"><div class="card-head"><div><h3>History</h3><div class="sub">Your logged start dates</div></div></div><div id="cList"></div></div>
+    </div>`;
+  document.getElementById('cList').innerHTML=sorted.length?sorted.map(d=>{const pos=full.indexOf(d);const gap=pos>0?daysBetween(full[pos-1],d):null;return `<div class="li"><div class="grow"><div class="t">${fmtDate(d)}</div><div class="m">${gap!=null?gap+' days after previous':'first logged'}</div></div><button class="del" data-act="delCycle" data-id="${d}">×</button></div>`;}).join(''):emptyState('No dates logged yet.');
+};
+function addCycle(){const d=val('cDate');if(!d){flash('cDate');return;}const cyc=DB.get('cycle',{starts:[]});if(!cyc.starts.includes(d))cyc.starts.push(d);DB.set('cycle',cyc);renderers.cycle();}
+function delCycle(d){const cyc=DB.get('cycle',{starts:[]});cyc.starts=cyc.starts.filter(x=>x!==d);DB.set('cycle',cyc);renderers.cycle();}
+
+/* ============ INIT ============ */
+
+/* ============ EVENT DELEGATION (works in sandboxes; no inline handlers) ============ */
+function dispatch(act, el){
+  switch(act){
+    case 'nav': switchView(el.dataset.view); break;
+    case 'menuOpen': toggleNav(true); break;
+    case 'menuClose': toggleNav(false); break;
+    case 'promptName': promptName(); break;
+    case 'saveName': saveName(); break;
+    case 'addTask': addTask(); break;
+    case 'toggleTask': toggleTask(el.dataset.id); break;
+    case 'setTaskFilter': setTaskFilter(el.dataset.f); break;
+    case 'toggleJuz': toggleJuz(el.dataset.juz); break;
+    case 'openSurah': openSurahModal(el.dataset.n); break;
+    case 'closeSurahModal': closeSurahModal(); break;
+    case 'saveSurahSession': saveSurahSession(el.dataset.n); break;
+    case 'delSurahSession': delSurahSession(el.dataset.n, el.dataset.sid); break;
+    case 'addINote': addINote(); break;
+    case 'delINote': delINote(el.dataset.id); break;
+    case 'addLearning': addLearning(); break;
+    case 'delLearning': delLearning(el.dataset.id); break;
+    case 'addYT': addYT(); break;
+    case 'delYT': delYT(el.dataset.id); break;
+    case 'addBook': addBook(); break;
+    case 'delBook': delBook(el.dataset.id); break;
+    case 'setBookFilter': setBookFilter(el.dataset.f); break;
+    case 'addHabit': addHabit(); break;
+    case 'toggleHabit': toggleHabit(el.dataset.id, el.dataset.date); break;
+    case 'delHabit': delHabit(el.dataset.id); break;
+    case 'addJournal': addJournal(); break;
+    case 'delJournal': delJournal(el.dataset.id); break;
+    case 'addCycle': addCycle(); break;
+    case 'delCycle': delCycle(el.dataset.id); break;
+  }
+}
+document.addEventListener('click', e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  e.preventDefault(); dispatch(el.dataset.act, el);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter'||e.shiftKey) return;
+  const el=e.target.closest('[data-enter]'); if(!el) return;
+  e.preventDefault(); dispatch(el.dataset.enter, el);
+});
+document.addEventListener('change', e=>{
+  const el=e.target.closest('[data-change]'); if(!el) return;
+  if(el.dataset.change==='setBookStatus') setBookStatus(el.dataset.id, el.value);
+});
+/* image fallback without inline onerror */
+document.addEventListener('error', e=>{
+  const img=e.target;
+  if(img.tagName==='IMG' && img.hasAttribute('data-fallback')){
+    const div=document.createElement('div');
+    div.className='thumb-fallback'; div.textContent='no preview';
+    img.replaceWith(div);
+  }
+}, true);
+
+setHeader();
+renderers.dashboard();
+</script>
+</body>
+</html>
